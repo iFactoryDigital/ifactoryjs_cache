@@ -9,11 +9,10 @@ const Controller = require('controller');
  * Create Cache Controller class
  */
 class CacheController extends Controller {
-
   /**
    * Construct Cache Controller class
    */
-  constructor () {
+  constructor() {
     // Run super
     super();
 
@@ -27,7 +26,7 @@ class CacheController extends Controller {
   /**
    * Build Cache Controller
    */
-  build () {
+  build() {
     // On view pre-compile
     this.eden.pre('view.compile', (render) => {
       // Check cache in state
@@ -50,13 +49,13 @@ class CacheController extends Controller {
           delete render.user;
 
           // Set cache
-          await this.eden.set(render.cache.name + render.cache.strung + 'json', JSON.stringify(render));
+          await this.eden.set(`${render.cache.name + render.cache.strung}json`, JSON.stringify(render));
 
           // Add user back
           render.user = renderUser;
         } else {
           // Set cache
-          await this.eden.set(render.cache.name + render.cache.strung + 'json', JSON.stringify(render));
+          await this.eden.set(`${render.cache.name + render.cache.strung}json`, JSON.stringify(render));
         }
       }
     });
@@ -84,7 +83,7 @@ class CacheController extends Controller {
       // Check cache
       if (render.cache && (render.cache.type === 'all' || (render.cache.type === 'anonymous' && !render.user))) {
         // Set cache
-        await this.eden.set(render.cache.name + render.cache.strung, page.split('<!-- USER.START -->')[0] + '<!-- USER.START --><!-- USER.END -->' + page.split('<!-- USER.END -->')[1], render.cache.ttl);
+        await this.eden.set(render.cache.name + render.cache.strung, `${page.split('<!-- USER.START -->')[0]}<!-- USER.START --><!-- USER.END -->${page.split('<!-- USER.END -->')[1]}`, render.cache.ttl);
       }
     });
 
@@ -114,11 +113,11 @@ class CacheController extends Controller {
    *
    * @async
    */
-  async _middleware (path, route, req, res, next) {
+  async _middleware(path, route, req, res, next) {
     // Get cache
     const {
       type,
-      name
+      name,
     } = route.cache;
 
     // Set to locals
@@ -135,8 +134,8 @@ class CacheController extends Controller {
       // Check cached
       if (!cached) {
         // Log cache miss
-        this.logger.log('debug', path + ' cache miss in ' + (new Date().getTime() - res.locals.timer.start) + 'ms', {
-          'class' : (route && route.type) ? route.type.toUpperCase() + ' ' + route.class + '.' + route.fn : 'No Route'
+        this.logger.log('debug', `${path} cache miss in ${new Date().getTime() - res.locals.timer.start}ms`, {
+          class : (route && route.type) ? `${route.type.toUpperCase()} ${route.class}.${route.fn}` : 'No Route',
         });
 
         // Return next
@@ -144,8 +143,8 @@ class CacheController extends Controller {
       }
 
       // Log cache hit
-      this.logger.log('debug', path + ' cache hit in ' + (new Date().getTime() - res.locals.timer.start) + 'ms', {
-        'class' : (route && route.type) ? route.type.toUpperCase() + ' ' + route.class + '.' + route.fn : 'No Route'
+      this.logger.log('debug', `${path} cache hit in ${new Date().getTime() - res.locals.timer.start}ms`, {
+        class : (route && route.type) ? `${route.type.toUpperCase()} ${route.class}.${route.fn}` : 'No Route',
       });
 
 
@@ -160,7 +159,7 @@ class CacheController extends Controller {
         // Stringify cached
         cached = JSON.stringify(cached);
       } else {
-        cached = cached.replace('<!-- USER.START --><!-- USER.END -->', '<!-- USER.START --><script data-eden="before-script">window.eden.user = JSON.parse (decodeURIComponent (atob ("' + new Buffer(encodeURIComponent(JSON.stringify(req.user ? await req.user.sanitise() : {}))).toString('base64') + '")));</script><!-- USER.END -->');
+        cached = cached.replace('<!-- USER.START --><!-- USER.END -->', `<!-- USER.START --><script data-eden="before-script">window.eden.user = JSON.parse (decodeURIComponent (atob ("${new Buffer(encodeURIComponent(JSON.stringify(req.user ? await req.user.sanitise() : {}))).toString('base64')}")));</script><!-- USER.END -->`);
       }
 
       // Send cached
@@ -173,7 +172,6 @@ class CacheController extends Controller {
     // Run next
     next();
   }
-
 }
 
 /**
